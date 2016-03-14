@@ -1,0 +1,111 @@
+#define DEBUG_TYPE "csepass"
+
+#include <map>
+#include <math.h>
+#include <string>
+#include <set>
+#include <sstream>
+#include <list>
+#include <iostream>
+#include <fstream>
+#include "llvm/ADT/Statistic.h"
+#include "llvm/IR/Function.h"
+#include "llvm/ADT/Hashing.h"
+#include "llvm/Pass.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/ADT/DenseMap.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/Transforms/Utils/BasicBlockUtils.h"
+
+using namespace std;
+using namespace llvm;
+
+
+Instruction* curr_Ins,*dup_Ins,*ins_del,*temp_Ins,*str_del;
+struct struct_instruction
+{
+Instruction *inst;
+long int value;
+struct struct_instruction * next;
+};
+struct struct_instruction *head=NULL; 
+long int ks_value=0;
+std::map<string,Instruction*> InsMap;
+std::map<string, set<string> > AvaiExp;
+std::map<string, set<string> > VarExp;
+set<string> ExpSet,VarExpSet,VarExpRes;
+std::map<Value*,int> Opr;
+int itr=0;
+LoadInst *LD;
+Value *v;
+string opcode,opr1,opr2,exprsn,testOp;
+namespace {
+	struct CSE : public FunctionPass {
+		static char ID; // Pass identification, replacement for typeid
+		
+		CSE() : FunctionPass(ID) { 
+						
+						}
+     	
+		~CSE() {
+						
+					}
+		virtual bool runOnFunction(Function &F) {
+			int z=1;
+			
+			for (Function::iterator b = F.begin(), be = F.end(); b != be; ++b) {
+				errs()<<"Basic Block "<<z++<<"\n";
+				for (BasicBlock::iterator i = b->begin(), ie = b->end(); i != ie;++i){
+					//Instruction *Inst = i++;
+					
+					curr_Ins = cast<Instruction>(i);
+					//errs()<<curr_Ins->getOpcode()<<"\n";
+					switch(curr_Ins->getOpcode()){ //each function invocation below returns EOUT in current iteration..
+					                
+							case Instruction::Add: { errs()<<"Addition Found\n";
+							                         struct struct_instruction *node = new struct struct_instruction;
+										 node->inst=curr_Ins;
+										 node->value=pow(2,ks_value);
+										 node->next=NULL;
+										 ks_value++;
+										 struct struct_instruction * temp= head;
+										 if(temp==NULL) temp=node;
+										 else
+										 {
+										 while(temp->next!=NULL) temp=temp->next;
+										 temp->next=node;
+										 }
+
+									
+														}
+							case Instruction::Sub: { }
+							case Instruction::Mul: {}
+							case 21: 			   { }
+							case Instruction::Store: {
+														
+														}
+								
+							
+							default:{ 
+												
+							}}
+							//traversal
+							errs()<<"Hello here";
+							struct struct_instruction *temp=head;
+							while(temp!=NULL)
+							{
+							errs()<<temp->value<<"\n"; temp=temp->next; }
+						}
+					
+				}
+			
+			
+			
+	
+		}
+	};
+}
+
+char CSE::ID = 0;
+static RegisterPass<CSE> X("CSE", "Print Instructions");
