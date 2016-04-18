@@ -1,0 +1,148 @@
+string instructionToString_backup(Instruction* curr_Ins)
+{
+	string op1,op2,opcode,exprsn;
+	Value *v;
+	LoadInst *LD;
+	Instruction* TT;
+	Instruction* TT2;
+	string opcodeName;
+	if(curr_Ins->getOpcode()==Instruction::Add) opcode="+";
+	else if(curr_Ins->getOpcode()==Instruction::Sub) opcode="-";
+	else if(curr_Ins->getOpcode()==21) opcode="/";
+	else if(curr_Ins->getOpcode()==Instruction::Mul) opcode="*";
+	TT = cast<Instruction>(curr_Ins->getOperand(0));
+	opcodeName=TT->getOpcodeName();
+		if(opcodeName=="load"){
+			LD = cast<LoadInst>(curr_Ins->getOperand(0));
+			v=LD->getOperand(0);
+			op1=v->getName().str();
+			LD = cast<LoadInst>(curr_Ins->getOperand(1));
+			v=LD->getOperand(0);
+			op2=v->getName().str();
+			exprsn=","+op1+","+op2+",";
+			errs()<<exprsn<<"\n";
+		}
+		else{
+		 	exprsn+=instructionToString(TT); 
+			errs()<<"\n"<<opcodeName<<" "<<exprsn<<"\n";
+		}
+	
+	return exprsn;
+}
+
+
+
+
+
+
+
+
+
+
+int block_number=blockCount;
+	Function::iterator basicBlockList[block_number];
+	Function::iterator temp2 = F.begin();
+	BasicBlock* tempbb = dyn_cast<BasicBlock>(&*temp2);
+	succ_iterator successor_begin_array[1000]=succ_begin(tempbb);
+	succ_iterator successor_end_array[1000]=succ_begin(tempbb);
+	int bblockno=0;
+	for (Function::iterator b = F.begin(), be = F.end(); b != be; ++b) //no of blocks CFG succ gen
+	{
+		basicBlockList[bblockno]=b;
+		BasicBlock* bb = dyn_cast<BasicBlock>(&*b);
+		successor_begin_array[bblockno] = succ_begin(bb);
+		successor_end_array[bblockno] = succ_end(bb);
+		bblockno++;
+	}
+	int cfg_graph_visited[block_number];
+	int cfg_rep[block_number][block_number];
+	for(int fori=0;fori<block_number;fori++)
+	{
+		cfg_graph_visited[fori]=0; 
+		for(int forj=0;forj<block_number;forj++)
+			cfg_rep[fori][forj]=0;
+	}
+	int index1=0;
+	while(index1<block_number)
+	{
+	cfg_graph_visited[index1]=1;
+	loopy:
+		if(successor_begin_array[index1]==successor_end_array[index1])
+			{
+					index1++;
+					continue;
+			}
+		else
+		   {
+		    	BasicBlock *TheSucc = *successor_begin_array[index1];
+				for(int index2=0; index2<block_number;index2++)
+				{
+					BasicBlock* bb = dyn_cast<BasicBlock>(&*basicBlockList[index2]);
+					if(TheSucc == bb)
+						cfg_rep[index1][index2]=1;
+				}
+				++successor_begin_array[index1];
+				goto loopy;
+		   }
+		index1++;
+								    
+	}
+	//control flow graph 
+	for(int fori=0;fori<block_number;fori++)
+	{
+		errs()<<"\n";
+		for(int forj=0;forj<block_number;forj++)
+			errs()<<cfg_rep[fori][forj]<<" ";
+	}
+
+	long long int ch = (exprsnNo-1)*2*block_number;
+	long long int latticeSize = (exprsnNo-1);
+	errs()<<" \n lattice blocks ch = "<<(int)(pow(2,exprsnNo))<<" "<<block_number<<" "<<ch;
+	int **final_graph; 
+	final_graph = new int*[ch]; 
+	for (int i = 0; i < ch; i++)
+    	final_graph[i] = new int[ch];
+    for(long long int fori=0;fori<ch;fori++)
+		for(long long int forj=0;forj<ch;forj++)
+		{
+			if(fori!=forj) final_graph[fori][forj]=INF;
+			else final_graph[fori][forj]=0;
+		}
+	
+	errs()<<"\n bb "<<block_number;
+	for(int bbNum=0;bbNum<block_number;bbNum++)
+	{
+		for(unsigned long long int latticeNum=0;latticeNum<latticeSize;latticeNum++)
+		{
+			int result=transferFunction(basicBlockList[bbNum],latticeNum);
+			long long int start=(bbNum*2*latticeSize)+latticeNum;
+			long long end=(bbNum*2*latticeSize)+latticeSize+result;
+			final_graph[start][end]=1;
+		}
+		//errs()<<"\n here \n";
+		for(int rbbNum=0;rbbNum<block_number;rbbNum++)
+		{
+			if(cfg_rep[bbNum][rbbNum]==1)
+			{
+				for(int latticeNum=0;latticeNum<latticeSize;latticeNum++)
+				{
+					long long start=(bbNum*2*latticeSize)+latticeSize+latticeNum;
+					long long end=(rbbNum*2*latticeSize)+latticeNum;
+					final_graph[start][end]=1;
+				}
+			}
+		}
+	}
+
+
+
+/* loop throgh hash map */
+
+
+
+	errs()<<"Checking \n";
+	for(map<string,long long int>::const_iterator it = InsValMap.begin();it != InsValMap.end(); ++it)
+{
+    errs()<< it->first << " " << it->second<<" ";//.first << " " << it->second.second << "\n";
+}
+errs()<<"\n";

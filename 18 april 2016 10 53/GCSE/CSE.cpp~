@@ -1,0 +1,231 @@
+#define DEBUG_TYPE "csepass"
+
+#include <map>
+#include <math.h>
+#include <string>
+#include <set>
+#include <sstream>
+#include <list>
+#include <iostream>
+#include <fstream>
+#include "llvm/ADT/Statistic.h"
+#include "llvm/IR/Function.h"
+#include "llvm/ADT/Hashing.h"
+#include "llvm/Pass.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/ADT/DenseMap.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/Transforms/Utils/BasicBlockUtils.h"
+
+using namespace std;
+using namespace llvm;
+
+
+Instruction* curr_Ins,*dup_Ins,*ins_del,*temp_Ins,*str_del;
+struct struct_instruction
+{
+Instruction *inst;
+long int value;
+struct struct_instruction * next;
+};
+struct struct_instruction *head=NULL; 
+long int ks_value=0;
+std::map<string,Instruction*> InsMap;
+std::map<string, set<string> > AvaiExp;
+std::map<string, set<string> > VarExp;
+set<string> ExpSet,VarExpSet,VarExpRes;
+std::map<Value*,int> Opr;
+int itr=0;
+LoadInst *LD;
+Value *v;
+string opcode,opr1,opr2,exprsn,testOp;
+
+int transferFunction(int input)
+{
+	int ks_pvalue=ks_value;
+	bool tobinary[ks_value+1];
+	for(int fori=0;fori<=ks_value;fori++) tobinary[fori]=0;
+	int tempinput=input;
+	int tempindex=0;
+	while(tempinput>0)
+	{
+		tobinary[tempindex++]=tempinput%2;
+		tempinput/=2;
+	}
+	for(int fori=0;fori<=ks_value;fori++) errs()<<tobinary[fori]<<" ";
+	struct struct_instruction *temp=head;
+	for(int fori=0;fori<=ks_value;fori++){
+			if(temp!=NULL)
+							{
+							errs()<<temp->value<<"\t";
+							temp->inst->print(errs());
+							
+							errs()<<"\n";
+							opcode="+"; //name resolving
+							LD = cast<LoadInst>(temp->inst->getOperand(0));
+							v=LD->getOperand(0);
+							opr1=v->getName().str();
+							LD = cast<LoadInst>(temp->inst->getOperand(1));
+							v=LD->getOperand(0);
+							opr2=v->getName().str();
+							exprsn=opr1+opcode+opr2;
+							if(tobinary[fori]==1)errs()<<"\n"<<exprsn<<"\n";
+							 temp=temp->next; }
+		
+	}
+	
+}
+
+namespace {
+	struct CSE : public FunctionPass {
+		static char ID; // Pass identification, replacement for typeid
+		
+		CSE() : FunctionPass(ID) { 
+						
+						}
+     	
+		~CSE() {
+						
+					}
+		virtual bool runOnFunction(Function &F) {
+			int block_number=0;
+			
+			for (Function::iterator b = F.begin(), be = F.end(); b != be; ++b) {
+				errs()<<"Basic Block "<<++block_number<<"\n";
+				for (BasicBlock::iterator i = b->begin(), ie = b->end(); i != ie;++i){
+					//Instruction *Inst = i++;
+					
+					curr_Ins = cast<Instruction>(i);
+					//errs()<<curr_Ins->getOpcode()<<"\n";
+					switch(curr_Ins->getOpcode()){ //each function invocation below returns EOUT in current iteration..
+					                
+							case Instruction::Add: { errs()<<"Addition Found\n";
+							opcode="+"; //name resolving
+							LD = cast<LoadInst>(curr_Ins->getOperand(0));
+							v=LD->getOperand(0);
+							opr1=v->getName().str();
+							LD = cast<LoadInst>(curr_Ins->getOperand(1));
+							v=LD->getOperand(0);
+							opr2=v->getName().str();
+							exprsn=opr1+opcode+opr2;
+							errs()<<"\n"<<exprsn<<"\n";
+							if(ExpSet.find(exprsn) == ExpSet.end()) {
+										ExpSet.insert(exprsn);
+							             struct struct_instruction *node = new struct struct_instruction;
+										 node->inst=curr_Ins;
+										 node->value=pow(2,ks_value);
+										// errs()<<node->value<<"\n";
+										 node->next=NULL;
+										 ks_value++;
+										 struct struct_instruction * temp= head;
+										 if(temp==NULL) head=node;
+										 else
+										 {
+										 while(temp->next!=NULL) temp=temp->next;
+										 temp->next=node;
+										 } }
+										}
+							case Instruction::Sub: { }
+							case Instruction::Mul: {}
+								
+							
+							default:{ 
+												
+							}}
+							
+						}
+					
+				}
+			
+			
+			//traversal
+							errs()<<"Output\n";
+							struct struct_instruction *temp=head;
+							while(temp!=NULL)
+							{
+							errs()<<temp->value<<"\t";
+							temp->inst->print(errs());
+							
+							errs()<<"\n";
+							opcode="+"; //name resolving
+							LD = cast<LoadInst>(temp->inst->getOperand(0));
+							v=LD->getOperand(0);
+							opr1=v->getName().str();
+							LD = cast<LoadInst>(temp->inst->getOperand(1));
+							v=LD->getOperand(0);
+							opr2=v->getName().str();
+							exprsn=opr1+opcode+opr2;
+							errs()<<"\n"<<exprsn<<"\n";
+							 temp=temp->next; }
+							
+							Function::iterator basicBlockList[block_number];
+							Function::iterator temp2 = F.begin();
+							BasicBlock* tempbb = dyn_cast<BasicBlock>(&*temp2);
+							
+							succ_iterator successor_begin_array[100]=succ_begin(tempbb);
+							succ_iterator successor_end_array[100]=succ_begin(tempbb);
+							int bblockno=0;
+							for (Function::iterator b = F.begin(), be = F.end(); b != be; ++b) 
+						    {
+								
+								basicBlockList[bblockno]=b;
+								BasicBlock* bb = dyn_cast<BasicBlock>(&*b);
+								successor_begin_array[bblockno] = succ_begin(bb);
+								successor_end_array[bblockno] = succ_end(bb);
+								bblockno++;
+								errs()<<bblockno<<"\n";
+								
+							}
+						    
+						    
+						    int cfg_graph_visited[block_number];
+						    int cfg_rep[block_number][block_number];
+						    for(int fori=0;fori<block_number;fori++)
+						         {
+									 cfg_graph_visited[fori]=0; 
+									 for(int forj=0;forj<block_number;forj++)
+										cfg_rep[fori][forj]=0;
+								}
+						    int index1=0;
+						    while(index1<block_number)
+						    {
+								cfg_graph_visited[index1]=1;
+								loopy:
+								if(successor_begin_array[index1]==successor_end_array[index1])
+								   {
+									   index1++;
+									   continue;
+								   }
+								else
+								   {
+									   BasicBlock *TheSucc = *successor_begin_array[index1];
+									   for(int index2=0; index2<block_number;index2++)
+									   {
+										   BasicBlock* bb = dyn_cast<BasicBlock>(&*basicBlockList[index2]);
+										   if(TheSucc == bb)
+												cfg_rep[index1][index2]=1;
+									   }
+									   ++successor_begin_array[index1];
+									   goto loopy;
+								   }
+								   index1++;
+								    
+						     }
+						     errs()<<"\n CFG \n";
+						     for(int index1=0;index1<block_number;index1++)
+								{
+									for(int index2=0;index2<block_number;index2++)
+									    errs()<<cfg_rep[index1][index2]<<" ";
+									 errs()<<"\n";
+							     }
+					long long int ch = pow(2,ks_value+1)*block_number;
+					int final_graph[ch][ch];
+					transferFunction(8);			  				
+		return false;
+		}
+	};
+}
+
+char CSE::ID = 0;
+static RegisterPass<CSE> X("CSE", "Print Instructions");
